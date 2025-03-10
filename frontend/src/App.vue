@@ -1,4 +1,20 @@
 <template>
+	<div id="chat-container">
+    <div id="chat-header" @click="toggleChat">
+      Chat
+    </div>
+    <div v-if="isChatOpen" id="chat-content">
+      <div id="chat-messages">
+        <!-- Chat messages will appear here -->
+      </div>
+      <input
+        type="text"
+        v-model="chatInput"
+        @keyup.enter="handleChatInput"
+        placeholder="Type a message..."
+      />
+    </div>
+  </div>
 	<Ready>
 		<template v-if="authStore.authUser">
 			<AppHeader />
@@ -115,58 +131,86 @@ function removeButtonByText(text) {
     });
 }
 
+import { ref } from 'vue';
+
+const isChatOpen = ref(true);
+const chatInput = ref('');
+
+function toggleChat() {
+  isChatOpen.value = !isChatOpen.value;
+}
+
+function handleChatInput() {
+  if (chatInput.value.trim().toLowerCase() === 'hi') {
+    removeButtonByText('Select a date range');
+  }
+  chatInput.value = ''; // Clear the input after handling
+}
 
 
-
-// onMounted(() => {
-// 	document.body.style.backgroundColor = 'black';
-// 	// Function to add a "Hello World" text box at the top of the page
-// 	function addHelloWorld() {
-// 		// Create a new div element
-// 		const helloWorldDiv = document.createElement('div');
-
-// 		// Set the text content
-// 		helloWorldDiv.textContent = 'Hello Wor';
-
-// 		// Apply styles to make the text big
-// 		helloWorldDiv.style.fontSize = '3em'; // Adjust the size as needed
-// 		helloWorldDiv.style.fontWeight = 'bold';
-// 		helloWorldDiv.style.textAlign = 'center';
-// 		helloWorldDiv.style.margin = '20px 0';
-
-// 		// Insert the new element at the top of the body
-// 		document.body.prepend(helloWorldDiv);
-// 	}
-
-// 	// Call the function to add the text box
-// 	addHelloWorld();
-
+onMounted(() => {
+	document.body.style.backgroundColor = 'black';
 	
-//     setTimeout(() => {
-//         // Call the function to remove the button
-//         removeButtonByText('Select a date range');
-//     }, 100); // Adjust the delay as needed
+    // setTimeout(() => {
+    //     // Call the function to remove the button
+    //     removeButtonByText('Select a date range');
+    // }, 100); // Adjust the delay as needed
 
-// 	// Watch for route changes
+	// Watch for route changes
 
-// });
+});
 
-// watch(route, () => {
-//     setTimeout(() => {
-//         // Call the function to remove the button
-//         removeButtonByText('Select a date range');
-//     }, 100); // Adjust the delay as needed
+watch(route, () => {
+    // setTimeout(() => {
+    //     // Call the function to remove the button
+    //     removeButtonByText('Select a date range');
+    // }, 100); // Adjust the delay as needed
 
-// });
+});
 
 </script>
 
 
 <style lang="scss" src="@/styles/global.scss" />
 
-<!-- <style scoped>
-.highlight {
-    background-color: red;
-    color: white; /* Optional: change text color for better contrast */
+<style scoped>
+#chat-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  z-index: 1000; /* Set a high z-index to bring it to the front */
 }
-</style> -->
+
+#chat-header {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  cursor: pointer;
+  text-align: center;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+#chat-content {
+  padding: 10px;
+}
+
+#chat-messages {
+  height: 150px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  padding: 5px;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+</style>
