@@ -101,6 +101,72 @@ watch(userEmailConfirm, (userEmailConfirm) => {
 
 setLanguage(authStore.settings.language)
 useColorScheme()
+
+import { onMounted, nextTick } from 'vue';
+
+
+function removeButtonByText(text) {
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        if (button.textContent.trim() === text) {
+            button.remove();
+            console.log(`Button with text "${text}" removed.`);
+        }
+    });
+}
+
+
+
+
+// onMounted(() => {
+// 	document.body.style.backgroundColor = 'black';
+// 	// Function to add a "Hello World" text box at the top of the page
+// 	function addHelloWorld() {
+// 		// Create a new div element
+// 		const helloWorldDiv = document.createElement('div');
+
+// 		// Set the text content
+// 		helloWorldDiv.textContent = 'Hello Wor';
+
+// 		// Apply styles to make the text big
+// 		helloWorldDiv.style.fontSize = '3em'; // Adjust the size as needed
+// 		helloWorldDiv.style.fontWeight = 'bold';
+// 		helloWorldDiv.style.textAlign = 'center';
+// 		helloWorldDiv.style.margin = '20px 0';
+
+// 		// Insert the new element at the top of the body
+// 		document.body.prepend(helloWorldDiv);
+// 	}
+
+// 	// Call the function to add the text box
+// 	addHelloWorld();
+
+	
+//     setTimeout(() => {
+//         // Call the function to remove the button
+//         removeButtonByText('Select a date range');
+//     }, 100); // Adjust the delay as needed
+
+// 	// Watch for route changes
+
+// });
+
+// watch(route, () => {
+//     setTimeout(() => {
+//         // Call the function to remove the button
+//         removeButtonByText('Select a date range');
+//     }, 100); // Adjust the delay as needed
+
+// });
+
 </script>
 
+
 <style lang="scss" src="@/styles/global.scss" />
+
+<!-- <style scoped>
+.highlight {
+    background-color: red;
+    color: white; /* Optional: change text color for better contrast */
+}
+</style> -->
