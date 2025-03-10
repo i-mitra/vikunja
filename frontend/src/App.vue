@@ -121,15 +121,7 @@ useColorScheme()
 import { onMounted, nextTick } from 'vue';
 
 
-function removeButtonByText(text) {
-    const buttons = document.querySelectorAll('button');
-    buttons.forEach(button => {
-        if (button.textContent.trim() === text) {
-            button.remove();
-            console.log(`Button with text "${text}" removed.`);
-        }
-    });
-}
+
 
 import { ref } from 'vue';
 
@@ -140,13 +132,40 @@ function toggleChat() {
   isChatOpen.value = !isChatOpen.value;
 }
 
-function handleChatInput() {
-  if (chatInput.value.trim().toLowerCase() === 'hi') {
-    removeButtonByText('Select a date range');
-  }
-  chatInput.value = ''; // Clear the input after handling
+function removeButtonByText(text) {
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        if (button.textContent.trim() === text) {
+            button.remove();
+            console.log(`Button with text "${text}" removed.`);
+        }
+    });
 }
 
+function handleChatInput() {
+	addRedBoxByText(chatInput.value.trim());
+	chatInput.value = ''; // Clear the input after handling
+}
+
+// function highlightElementByText(text) {
+//   const elements = document.querySelectorAll('*');
+//   elements.forEach(element => {
+//     if (element.textContent.trim() === text) {
+//       element.classList.add('highlight');
+//       console.log(`Element with text "${text}" highlighted.`);
+//     }
+//   });
+// }
+
+function addRedBoxByText(text) {
+  const elements = document.querySelectorAll('*');
+  elements.forEach(element => {
+    if (element.textContent.trim() === text) {
+      element.classList.add('red-box');
+      console.log(`Element with text "${text}" given a red box.`);
+    }
+  });
+}
 
 onMounted(() => {
 	document.body.style.backgroundColor = 'black';
@@ -213,4 +232,11 @@ input[type="text"] {
   padding: 8px;
   box-sizing: border-box;
 }
+
+/* .red-box {
+  border: 3px solid red !important; 
+  padding: 5px; 
+  z-index: 1000; 
+} */
+
 </style>

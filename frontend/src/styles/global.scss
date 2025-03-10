@@ -90,3 +90,9 @@
 @import "components";
 
 @import "custom-properties";
+
+.red-box {
+    border: 3px solid red !important;
+    padding: 5px !important;
+    z-index: 1000 !important;
+  }
