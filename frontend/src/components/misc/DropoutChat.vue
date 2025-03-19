@@ -91,8 +91,32 @@ const handleChatInput = async () => {
 
 		const aiResponse = response.data.output[0].content[0].text
 		chatMessages.value += `\nAI: ${aiResponse}`
+		highlightElement(aiResponse);
 	} catch (error) {
 		console.error('Error fetching AI response:', error)
+	}
+}
+
+function highlightElement(aiResponse: string) {
+	const cleanedResponse = aiResponse.replace(/[`]/g, '').replace(/json/g, '').trim();
+	console.log(cleanedResponse)
+	try {
+	// Parse the cleaned response
+	const { class: className, textContent } = JSON.parse(cleanedResponse);
+	console.log(className, textContent)
+
+	// Find elements with the specified class
+    const selector = className.split(' ').map((cls: string) => `.${cls}`).join('');
+    const elements = document.querySelectorAll(selector);
+	elements.forEach(element => {
+		// Check if the element's text content matches
+		if (element.textContent?.trim() === textContent) {
+		element.classList.add('red-box');
+		console.log(`Element with class "${className}" and text "${textContent}" highlighted.`);
+		}
+	});
+	} catch (error) {
+	console.error('Failed to parse AI response:', error);
 	}
 }
 </script>
@@ -128,5 +152,11 @@ textarea {
 	border: 1px solid #ccc;
 	padding: 5px;
 	background: #f9f9f9;
+}
+
+.red-box {
+  border: 3px solid red !important; /* Ensure the border is applied */
+  padding: 5px !important; /* Ensure padding is applied */
+  z-index: 1000 !important; /* Ensure it appears above other elements */
 }
 </style>
