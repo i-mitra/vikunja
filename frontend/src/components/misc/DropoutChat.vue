@@ -95,6 +95,7 @@ const handleChatInput = async () => {
 	background: white;
 	border: 1px solid #ccc;
 	border-radius: 5px;
+	z-index: 9999;
 }
 
 #chat-header {

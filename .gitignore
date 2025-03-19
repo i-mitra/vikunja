@@ -8,6 +8,7 @@ config.yaml
 !.gitea/ISSUE_TEMPLATE/config.yml
 docs/themes/
 *.db
+db/*
 Run
 dist/
 cover.*
@@ -29,6 +30,9 @@ os-packages/
 mage_output_file.go
 mage-static
 .DS_Store
+*open-ai.config.js
+*.key
+*.key.pub
 
 # Devenv
 .devenv*
@@ -39,3 +43,4 @@ devenv.local.nix
 
 # pre-commit
 .pre-commit-config.yaml
+*open-ai.config.js
