@@ -1,48 +1,62 @@
 /**
- * Main: Clean HTML string by removing unnecessary tags and attributes
+ * Main: Clean HTML by removing unnecessary tags and attributes
  *
- * @param {string} htmlContent - Input HTML string
+ * @param {Element} domElement - Input DOM element
  * @returns {string} Cleaned HTML string
  */
-function cleanHtmlText(htmlContent) {
-	const parser = new DOMParser();
-	const doc = parser.parseFromString(htmlContent, "text/html");
+function cleanHtmlText(domElement) {
+	if (!domElement) return null;
 
-	if (!doc) return null;
+	// Create a clone to avoid modifying the original
+	const doc = domElement.cloneNode(true);
 
-	// Remove unwanted elements
-	['style', 'script'].forEach(tag => {
+	// Remove unwanted elements: style, script, path
+	['style', 'script', 'path'].forEach(tag => {
 		doc.querySelectorAll(tag).forEach(el => el.remove());
 	});
 
-	// Clean attributes
+	// Clean attributes for each element
 	doc.querySelectorAll('*').forEach(el => {
 		const classValue = el.getAttribute("class");
-		const vueIds = Array.from(el.attributes)
-			.filter(attr => attr.name.startsWith("data-v-"))
-			.map(attr => ({name: attr.name, value: attr.value}));
+		const idValue = el.getAttribute("id");
+		const typeValue = el.getAttribute("type");
+		const titleValue = el.getAttribute("title");
+		const dataIconValue = el.getAttribute("data-icon");
+		
+		// Store direct text nodes only (not including child elements)
+		const directTextContent = Array.from(el.childNodes)
+			.filter(node => node.nodeType === 3) // Text nodes only
+			.map(node => node.textContent)
+			.join('');
 			
 		// Remove all attributes
 		while (el.attributes.length) {
 			el.removeAttribute(el.attributes[0].name);
 		}
 
-		// Keep only what we need
+		// Keep only: class, id, type, title, data-icon
 		if (classValue) el.setAttribute("class", classValue);
-		vueIds.forEach(attr => el.setAttribute(attr.name, attr.value));
+		if (idValue) el.setAttribute("id", idValue);
+		if (typeValue) el.setAttribute("type", typeValue);
+		if (titleValue) el.setAttribute("title", titleValue);
+		if (dataIconValue) el.setAttribute("data-icon", dataIconValue);
+		
+		// Restore direct text content if it existed
+		if (directTextContent && directTextContent.trim()) {
+			// Find all direct text nodes and update their content
+			Array.from(el.childNodes)
+				.filter(node => node.nodeType === 3)
+				.forEach(node => node.textContent = directTextContent);
+		}
 	});
 
-	return doc.documentElement.outerHTML;
+	return doc.outerHTML
+        .replace(/>\s+</g, '><') // ! Remove whitespace between tags 
+        .replace(/\s{2,}/g, ' ') // ! Replace multiple spaces with single space
+        .trim();
 }
 
-// Example usage:
-// Get and clean the current page's HTML
-// const cleanedHtml = cleanHtmlText(document.documentElement.outerHTML);
-
-// Log to the console
-// console.log("Cleaned HTML:");
+// Example usage with the entire document
+// const element = document.documentElement; 
+// const cleanedHtml = cleanHtmlText(element);
 // console.log(cleanedHtml);
-
-// You can also open it in a new window
-// const newWindow = window.open();
-// newWindow.document.write(cleanedHtml);
