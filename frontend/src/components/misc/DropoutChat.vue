@@ -37,6 +37,8 @@ const isChatOpen = ref(false)
 const chatInput = ref('')
 const chatMessages = ref('')
 
+const systemPrompt = 'From the following code identify the the elements the user is trying to identify. Return in json format with the class, tags and textContent of the elements that needs to be highlighted.\n\nOnly return in exactly the format as below\n{\n    class: "task-container",\n    tag: "a",\n    textContent: "as",\n}'
+
 const toggleChat = () => {
 	isChatOpen.value = !isChatOpen.value
 }
@@ -50,6 +52,15 @@ const handleChatInput = async () => {
 		const response = await axios.post('https://api.openai.com/v1/responses', {
 			model: 'gpt-4o-mini',
 			input: [
+				{
+					role: 'system',
+					content: [
+						{
+							type: 'input_text',
+							text: systemPrompt,
+						},
+					],
+				},
 				{
 					role: 'user',
 					content: [
