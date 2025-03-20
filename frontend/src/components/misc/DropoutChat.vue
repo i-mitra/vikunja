@@ -1,6 +1,7 @@
 <template>
 	<div
 		id="chat-container"
+		:style="chatContainerStyle"
 	>
 		<div
 			id="chat-header"
@@ -43,12 +44,18 @@ import { OPENAI_API_KEY } from '../../open-ai.config.js'
 import { system_prompt } from './DropoutChat.config.js'
 
 const isChatOpen = ref(false)
+const isExpanded = ref(false)
 const chatInput = ref('')
 const chatMessages = ref('')
 
+const chatContainerStyle = computed(() => ({
+	width: isExpanded.value ? '500px' : '300px',
+	height: isExpanded.value ? '500px' : 'auto',
+}))
+
 const messageContainerStyle = computed(() => ({
-	flex: '1' as const,
-	overflowY: 'auto' as const
+	flex: '1',
+	overflowY: 'auto',
 }))
 
 const toggleChat = () => {
@@ -66,7 +73,7 @@ const handleChatInput = async () => {
 
 	try {
 		const response = await axios.post('https://api.openai.com/v1/responses', {
-			model: 'gpt-4o',
+			model: 'gpt-4o-mini',
 			input: [
 				{
 					role: 'system',
@@ -114,37 +121,23 @@ const handleChatInput = async () => {
 }
 
 function highlightElement(aiResponse: string) {
-	document.querySelectorAll('.red-box').forEach(element => {
-		element.classList.remove('red-box');
-	});
-	const cleanedResponse = aiResponse
-		.replace(/[`]/g, '') // Remove backticks
-		.replace(/(\w+):/g, '"$1":') // Add quotes around keys
-		.replace(/json/g, '') // Remove the term 'json'
-		.trim();
+	const cleanedResponse = aiResponse.replace(/[`]/g, '').replace(/json/g, '').trim()
 	console.log(cleanedResponse)
 	try {
 		// Parse the cleaned response
 		const { class: className, textContent } = JSON.parse(cleanedResponse)
 		console.log(className, textContent)
 
-		// Find elements that match the text content
-		let matchingElements = Array.from(document.querySelectorAll('*')).filter(element => {
-			return element.textContent?.trim() === textContent;
-		});
-
-		// If className is provided, use it to narrow down the elements
-		if (className && matchingElements.length > 1) {
-			const classSelector = className.split(' ').map((cls: string) => `.${cls}`).join('');
-			matchingElements = matchingElements.filter(element => element.matches(classSelector));
-		}
-
-		// Highlight the matching elements
-		matchingElements.forEach(element => {
-			element.classList.add('red-box');
-			console.log(`Element with text "${textContent}" highlighted.`);
-		});
-
+		// Find elements with the specified class
+		const selector = className.split(' ').map((cls: string) => `.${cls}`).join('')
+		const elements = document.querySelectorAll(selector)
+		elements.forEach(element => {
+			// Check if the element's text content matches
+			if (element.textContent?.trim() === textContent) {
+				element.classList.add('red-box')
+				console.log(`Element with class "${className}" and text "${textContent}" highlighted.`)
+			}
+		})
 	} catch (error) {
 		console.error('Failed to parse AI response:', error)
 	}
@@ -153,8 +146,6 @@ function highlightElement(aiResponse: string) {
 
 <style scoped>
 #chat-container {
-	width: 500px;
-	height: 500px;
 	position: fixed;
 	bottom: 10px;
 	right: 10px;
@@ -178,14 +169,6 @@ function highlightElement(aiResponse: string) {
 	align-items: center;
 }
 
-#resize-button {
-	background: transparent;
-	border: none;
-	color: white;
-	cursor: pointer;
-	font-size: 16px;
-}
-
 #chat-content {
 	flex: 1;
 	display: flex;
@@ -199,6 +182,11 @@ function highlightElement(aiResponse: string) {
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
+}
+
+#chat-messages textarea{
+	min-height: 400px;
+	resize: none;
 }
 
 #chat-input-container {
