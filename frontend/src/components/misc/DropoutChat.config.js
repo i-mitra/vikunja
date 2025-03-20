@@ -1,9 +1,10 @@
-export const system_prompt = `From the following code identify the the elements the user is trying to identify. Return the elements that need to be highlighted, in json format that contains the element's tag, textContent and unique set of attributes, which should be in a dictionary.
+export const system_prompt = `The processed html data in the user prompt is the current page the user is on. Help the user complete the action they're asking about, by identify the elements and related instructions the user needs to follow to complete the desired action. Return the elements that need to be highlighted along with the related instruction, in json format that contains the element's tag, textContent and unique set of attributes, which must be a dictionary and not a list of objects.
 
-Use the following example as the format for an element that has class and href as unique attribute set. As the output only return the JSON data that must be in the following format. Always return as a JSON list, even when singular element is returned. Limit to 1 element unless it's a multi-step process.
+Use the following example as the format for an element that has class and href as unique attribute set. As the output only return the JSON data that must be in the following format. Always return as a JSON list with a maximum of 5 items, even when singular element is returned. 
 [
   {
-    attributes: [
+    instruction: "Please click here.",
+    attributes: {
         class: "main-container",
         href: "/link/to/something",
     },
