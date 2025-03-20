@@ -1,19 +1,12 @@
 <template>
 	<div
 		id="chat-container"
-		:style="chatContainerStyle"
 	>
 		<div
 			id="chat-header"
 			@click="toggleChat"
 		>
 			Chat
-			<button
-				id="resize-button"
-				@click.stop="toggleSize"
-			>
-				🔍
-			</button>
 		</div>
 		<div
 			v-if="isChatOpen"
@@ -47,30 +40,19 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { cleanHtmlText } from '../../../../htmlCleaner/text_cleaner.js'
 import { OPENAI_API_KEY } from '../../open-ai.config.js'
+import { system_prompt } from './DropoutChat.config.js'
 
 const isChatOpen = ref(false)
-const isExpanded = ref(false)
 const chatInput = ref('')
 const chatMessages = ref('')
-
-const chatContainerStyle = computed(() => ({
-	width: isExpanded.value ? '500px' : '300px',
-	height: isExpanded.value ? '500px' : 'auto',
-}))
 
 const messageContainerStyle = computed(() => ({
 	flex: '1' as const,
 	overflowY: 'auto' as const
 }))
 
-const systemPrompt = 'From the following code identify the the elements the user is trying to identify. Return in json format with the class, tags and textContent of the elements that needs to be highlighted.\n\nOnly return in exactly the format as below\n{\n    class: "task-container",\n    tag: "a",\n    textContent: "as",\n}'
-
 const toggleChat = () => {
 	isChatOpen.value = !isChatOpen.value
-}
-
-const toggleSize = () => {
-	isExpanded.value = !isExpanded.value
 }
 
 const handleChatInput = async () => {
@@ -91,7 +73,7 @@ const handleChatInput = async () => {
 					content: [
 						{
 							type: 'input_text',
-							text: systemPrompt,
+							text: system_prompt,
 						},
 					],
 				},
@@ -171,6 +153,8 @@ function highlightElement(aiResponse: string) {
 
 <style scoped>
 #chat-container {
+	width: 500px;
+	height: 500px;
 	position: fixed;
 	bottom: 10px;
 	right: 10px;
