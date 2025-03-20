@@ -8,6 +8,9 @@
 			@click="toggleChat"
 		>
 			Chat
+			<button id="wand-button" @click="clickRedBoxedElements">
+				🪄
+			</button>
 		</div>
 		<div
 			v-if="isChatOpen"
@@ -208,6 +211,13 @@ function highlightElement(cleanedResponse: string) {
 		console.error('Failed to parse AI response:', error)
 	}
 }
+
+const clickRedBoxedElements = () => {
+	const redBoxedElements = document.querySelectorAll('.red-box');
+	redBoxedElements.forEach(element => {
+		(element as HTMLElement).click();
+	});
+};
 </script>
 
 <style scoped>
@@ -233,6 +243,7 @@ function highlightElement(cleanedResponse: string) {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	position: relative;
 }
 
 #chat-content {
@@ -287,5 +298,15 @@ function highlightElement(cleanedResponse: string) {
 	padding: 10px;
 	cursor: pointer;
 	border-radius: 5px;
+}
+
+#wand-button {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-size: 20px;
 }
 </style>
