@@ -20,16 +20,36 @@ export function cleanHtmlText(domElement) {
 		doc.appendChild(body);
 	}
 
-	// Remove all SVG elements
-	doc.querySelectorAll('svg').forEach(svg => svg.remove());
+	// Remove <style> tags
+	doc.querySelectorAll('style').forEach(style => style.remove());
+
+	// Remove <script> tags
+	doc.querySelectorAll('script').forEach(script => script.remove());
+
+	// Keep only <title> and <desc> tags inside SVG, remove all other tags inside SVG
+	doc.querySelectorAll('svg').forEach(svg => {
+		const titleElement = svg.querySelector('title');
+		const descElement = svg.querySelector('desc');
+		
+		// Clear all content of SVG
+		while (svg.firstChild) {
+			svg.removeChild(svg.firstChild);
+		}
+		
+		// Add back only title and desc if they existed
+		if (titleElement) {
+			svg.appendChild(titleElement);
+		}
+		if (descElement) {
+			svg.appendChild(descElement);
+		}
+	});
 
 	return doc.outerHTML
-        .replace(/>\s+</g, '><') // Remove whitespace between tags 
-        .replace(/\s{2,}/g, ' ') // Replace multiple spaces with single space
-        .trim();
+		.replace(/>\s+</g, '><') // Remove whitespace between tags
+		.replace(/\s{2,}/g, ' ') // Replace multiple spaces with single space
+		.trim();
 }
 
 // Example usage with the entire document
-// const element = document.documentElement; 
-// const cleanedHtml = cleanHtmlText(element);
-// console.log(cleanedHtml);
+// const element = document.documentElement; const cleanedHtml = cleanHtmlText(element); console.log(cleanedHtml);
