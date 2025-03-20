@@ -63,13 +63,51 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 import axios from 'axios'
-import { cleanHtmlText } from '../../../../htmlCleaner/text_cleaner.js'
+import { cleanHtmlText, extractTextContent } from '../../../../htmlCleaner/text_cleaner.js'
 import { OPENAI_API_KEY } from '../../open-ai.config.js'
-import { system_prompt } from './DropoutChat.config.js'
+import { system_prompt, other_pages_prompt, additional_other_pages_prompt } from './DropoutChat.config.js'
+
+const route = useRoute()
+
+const currentRouteUrl = ref(route.fullPath)
+
+watch(route, (newRoute) => {
+    const element = document.documentElement
+    const extractedText = extractTextContent(element)
+    const pageUrl = currentRouteUrl.value
+
+	console.log(extractedText)
+	console.log("Page URL")
+	console.log(pageUrl)
+
+    // Save the extracted text and URL of the current page
+    savePageData(pageUrl, extractedText)
+
+    // Update the current route URL to the new route
+    currentRouteUrl.value = newRoute.fullPath
+	console.log("New Route URL")
+	console.log(currentRouteUrl.value)
+})
+
+function savePageData(url: string, extractedText: string) {
+	const storageKey = 'pageData'
+    const storedData = localStorage.getItem(storageKey)
+    let pageData = storedData ? JSON.parse(storedData) : {}
+
+    // Update or add the cleaned HTML for the current URL
+    pageData[url] = extractedText
+
+    // Save the updated data back to local storage
+    localStorage.setItem(storageKey, JSON.stringify(pageData))
+	console.log(`Data saved for URL: ${url}`)
+
+}
+
 
 const isChatOpen = ref(false)
 const isExpanded = ref(false)
@@ -104,6 +142,23 @@ const handleChatInput = async () => {
 	const cleanedHtml = cleanHtmlText(element)
 	console.log(cleanedHtml)
 
+	    // Retrieve stored page data
+	const storageKey = 'pageData'
+    const storedData = localStorage.getItem(storageKey)
+    const pageData = storedData ? JSON.parse(storedData) : {}
+
+    // Extract text content from all stored pages
+    let otherPagesText = 'Here is what the other pages look like:\n'
+    for (const [url, pageText] of Object.entries(pageData)) {
+        otherPagesText += `URL: ${url}\n${pageText}\n${url}\n---\n`
+    }
+	if (otherPagesText.length > 10000) {
+		otherPagesText = otherPagesText.substring(0, 10000)
+	}
+	otherPagesText += other_pages_prompt
+	console.log(otherPagesText)
+
+
 	try {
 		const response = await axios.post('https://api.openai.com/v1/responses', {
 			model: 'gpt-4o-mini',
@@ -122,7 +177,7 @@ const handleChatInput = async () => {
 					content: [
 						{
 							type: 'input_text',
-							text: `${cleanedHtml}\n${userMessage}`,
+							text: `${otherPagesText}\n${cleanedHtml}\n${userMessage}\n\n${additional_other_pages_prompt}`,
 						},
 					],
 				},
@@ -182,7 +237,7 @@ function showInstructionIn(direction:number) {
 		const step = instructionSet[instructionStep.value]
 		
 		console.log(`Showing - ${step}`)
-		const cleanedItem = JSON.stringify(step).replace(/[`]/g, '').replace(/json/g, '').trim()
+		const cleanedItem = JSON.stringify(step).replace(/[`]/g, '').replace(/json/g, '').replace(/'/g, '').trim()
 		highlightElement(cleanedItem)
 	}
 }
@@ -246,13 +301,17 @@ function highlightElement(cleanedResponse: string) {
 
 		// Filter elements by each selector one at a time
 		individualSelectors.forEach(sel => {
-			if (matchingElements.length > 1) {
-				const previousMatchingElements = [...matchingElements]
-				matchingElements = matchingElements.filter(element => element.matches(`${tag}${sel}`))
-				// If filtering results in no elements, revert to the previous state
-				if (matchingElements.length === 0) {
-					matchingElements = previousMatchingElements
+			try {
+				if (matchingElements.length > 1) {
+					const previousMatchingElements = [...matchingElements]
+					matchingElements = matchingElements.filter(element => element.matches(`${tag}${sel}`))
+					// If filtering results in no elements, revert to the previous state
+					if (matchingElements.length === 0) {
+						matchingElements = previousMatchingElements
+					}
 				}
+			} catch (error) {
+				console.error(`Invalid selector: ${sel}`, error);
 			}
 		})
 		if (matchingElements.length > 1) {

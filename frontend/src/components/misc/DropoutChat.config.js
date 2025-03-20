@@ -22,3 +22,8 @@ Following is an example of the JSON formatted data that is expected to return wh
     textContent: "Lorem Epsum",
   }
 ]`
+
+
+export const other_pages_prompt = `Please use the information from the other pages to help you answer the user's question ONLY IF the answer lies on another page.`
+
+export const additional_other_pages_prompt = `If the answer lies on another page based on the saved text from other pages, please ONLY help the user to navigate to the relevant page. If not, just use the current page information to answer the question.`

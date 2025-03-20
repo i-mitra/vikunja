@@ -51,5 +51,28 @@ export function cleanHtmlText(domElement) {
 		.trim();
 }
 
+
+export function extractTextContent(domElement) {
+    if (!domElement) return '';
+
+    // Use a recursive function to gather text content
+    const getTextContent = (node) => {
+        let text = '';
+        node.childNodes.forEach(child => {
+            if (child.nodeType === Node.TEXT_NODE) {
+                text += child.textContent.trim() + ' ';
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+                // Skip <style> and <script> elements
+                if (child.tagName.toLowerCase() !== 'style' && child.tagName.toLowerCase() !== 'script') {
+                    text += getTextContent(child);
+                }
+            }
+        });
+        return text;
+    };
+
+    return getTextContent(domElement).trim();
+}
+
 // Example usage with the entire document
 // const element = document.documentElement; const cleanedHtml = cleanHtmlText(element); console.log(cleanedHtml);
