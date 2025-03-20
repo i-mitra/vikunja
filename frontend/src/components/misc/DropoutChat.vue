@@ -59,8 +59,8 @@ const chatContainerStyle = computed(() => ({
 }))
 
 const messageContainerStyle = computed(() => ({
-	flex: '1',
-	overflowY: 'auto',
+	flex: '1' as const,
+	overflowY: 'auto' as const
 }))
 
 const systemPrompt = 'From the following code identify the the elements the user is trying to identify. Return in json format with the class, tags and textContent of the elements that needs to be highlighted.\n\nOnly return in exactly the format as below\n{\n    class: "task-container",\n    tag: "a",\n    textContent: "as",\n}'
@@ -84,7 +84,7 @@ const handleChatInput = async () => {
 
 	try {
 		const response = await axios.post('https://api.openai.com/v1/responses', {
-			model: 'gpt-4o-mini',
+			model: 'gpt-4o',
 			input: [
 				{
 					role: 'system',
@@ -132,23 +132,37 @@ const handleChatInput = async () => {
 }
 
 function highlightElement(aiResponse: string) {
-	const cleanedResponse = aiResponse.replace(/[`]/g, '').replace(/json/g, '').trim()
+	document.querySelectorAll('.red-box').forEach(element => {
+		element.classList.remove('red-box');
+	});
+	const cleanedResponse = aiResponse
+		.replace(/[`]/g, '') // Remove backticks
+		.replace(/(\w+):/g, '"$1":') // Add quotes around keys
+		.replace(/json/g, '') // Remove the term 'json'
+		.trim();
 	console.log(cleanedResponse)
 	try {
 		// Parse the cleaned response
 		const { class: className, textContent } = JSON.parse(cleanedResponse)
 		console.log(className, textContent)
 
-		// Find elements with the specified class
-		const selector = className.split(' ').map((cls: string) => `.${cls}`).join('')
-		const elements = document.querySelectorAll(selector)
-		elements.forEach(element => {
-			// Check if the element's text content matches
-			if (element.textContent?.trim() === textContent) {
-				element.classList.add('red-box')
-				console.log(`Element with class "${className}" and text "${textContent}" highlighted.`)
-			}
-		})
+		// Find elements that match the text content
+		let matchingElements = Array.from(document.querySelectorAll('*')).filter(element => {
+			return element.textContent?.trim() === textContent;
+		});
+
+		// If className is provided, use it to narrow down the elements
+		if (className && matchingElements.length > 1) {
+			const classSelector = className.split(' ').map((cls: string) => `.${cls}`).join('');
+			matchingElements = matchingElements.filter(element => element.matches(classSelector));
+		}
+
+		// Highlight the matching elements
+		matchingElements.forEach(element => {
+			element.classList.add('red-box');
+			console.log(`Element with text "${textContent}" highlighted.`);
+		});
+
 	} catch (error) {
 		console.error('Failed to parse AI response:', error)
 	}
