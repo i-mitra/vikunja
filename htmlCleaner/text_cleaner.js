@@ -4,7 +4,7 @@
  * @param {Element} domElement - Input DOM element
  * @returns {string} Cleaned HTML string
  */
-function cleanHtmlText(domElement) {
+export function cleanHtmlText(domElement) {
 	if (!domElement) return null;
 
 	// Create a clone to avoid modifying the original
