@@ -102,7 +102,7 @@ const handleChatInput = async () => {
 			reasoning: {},
 			tools: [],
 			temperature: 1,
-			max_output_tokens: 150,
+			max_output_tokens: 1000,
 			top_p: 1,
 			store: true,
 		}, {
@@ -112,32 +112,95 @@ const handleChatInput = async () => {
 			},
 		})
 
+		const redBoxes = document.querySelectorAll('.red-box');
+		redBoxes.forEach(box => {
+			box.classList.remove('red-box');
+		});
+
 		const aiResponse = response.data.output[0].content[0].text
 		chatMessages.value += `\nAI: ${aiResponse}`
-		highlightElement(aiResponse)
+
+		const startIndex = aiResponse.indexOf('[');
+		const endIndex = aiResponse.lastIndexOf(']');
+		
+		const jsonResponse = aiResponse.substring(startIndex, endIndex + 1);
+		const jsonList = JSON.parse(jsonResponse);
+		jsonList.forEach((jsonItem: string) => {
+			const cleanedItem = JSON.stringify(jsonItem).replace(/[`]/g, '').replace(/json/g, '').trim();
+			highlightElement(cleanedItem);
+		});
+
+
 	} catch (error) {
 		console.error('Error fetching AI response:', error)
 	}
 }
 
-function highlightElement(aiResponse: string) {
-	const cleanedResponse = aiResponse.replace(/[`]/g, '').replace(/json/g, '').trim()
+function highlightElement(cleanedResponse: string) {
+
+
 	console.log(cleanedResponse)
 	try {
 		// Parse the cleaned response
-		const { class: className, textContent } = JSON.parse(cleanedResponse)
-		console.log(className, textContent)
+		const parsedResponse = JSON.parse(cleanedResponse)
+    	// Extract the necessary information
+		const { attributes, tag, textContent } = parsedResponse;
+		console.log(attributes, tag, textContent)
+		let attributeSelectors = '';
 
-		// Find elements with the specified class
-		const selector = className.split(' ').map((cls: string) => `.${cls}`).join('')
-		const elements = document.querySelectorAll(selector)
-		elements.forEach(element => {
-			// Check if the element's text content matches
-			if (element.textContent?.trim() === textContent) {
-				element.classList.add('red-box')
-				console.log(`Element with class "${className}" and text "${textContent}" highlighted.`)
+		
+        // Check if attributes is an object
+		if (typeof attributes === 'object' && attributes !== null) {
+        attributeSelectors = Object.entries(attributes)
+            .map(([key, value]) => {
+                if (key === 'class' && value.trim() !== '') {
+                    // Handle multiple classes
+                    return value.split(' ').map((cls: string) => `.${cls}`).join('');
+                } else if (key !== 'class') {
+                    return `[${key}="${value}"]`;
+                }
+                return ''; // Return an empty string if class is empty
+            })
+            .join('');
+    	} else {
+        	console.warn('Attributes is not an object:', attributes);
+    	}
+		
+
+
+		console.log("Attribute Selectors")
+		console.log(attributeSelectors)
+
+		const selector = `${tag}${attributeSelectors}`;
+		console.log("Selector")
+		console.log(selector)
+		// Find elements that match the text content
+		let matchingElements = Array.from(document.querySelectorAll('*')).filter(element => {
+			return element.textContent?.trim() === textContent;
+		});
+		
+
+		// If selector is provided, use it to narrow down the elements
+		if (selector && matchingElements.length > 1) {
+			const newMatchingElements = matchingElements.filter(element => element.matches(selector));
+
+			if (newMatchingElements.length > 0) {
+				// If there are matching elements, use the first one
+				matchingElements = [newMatchingElements[0]];
+				console.log(matchingElements[0]);
+			} else {
+				// If no new matches, fallback to the first of the original matches
+				matchingElements = [matchingElements[0]];
+				console.log(matchingElements[0]);
 			}
-		})
+		}
+		
+		// Highlight the matching elements, can be 0 or 1
+		matchingElements.forEach(element => {
+			element.classList.add('red-box');
+			console.log(`Element with text "${textContent}" highlighted.`);
+		});
+
 	} catch (error) {
 		console.error('Failed to parse AI response:', error)
 	}
