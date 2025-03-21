@@ -1,43 +1,35 @@
 <template>
 	<div
-		id="chat-container"
-		:style="chatContainerStyle"
+		v-if="!showInstruction"
+		class="instruction-container"
 	>
-		<div
-			id="chat-header"
-			@click="toggleChat"
+		<BaseButton
+			v-if="!isLoadingInstructions"
+			class="direction-button"
+			@click="toggleInput"
 		>
-			Chat
-			<button
-				id="wand-button"
-				@click="clickRedBoxedElements"
-			>
-				🪄
-			</button>
-		</div>
+			<Icon icon="graduation-cap" />
+		</BaseButton>
+		<Icon
+			v-if="isLoadingInstructions"
+			class="direction-button"
+			icon="hourglass-half"
+		/>
 		<div
-			v-if="isChatOpen"
-			id="chat-content"
+			v-if="isInputOpen"
+			class="query-container"
 		>
-			<div
-				id="chat-messages"
-				:style="messageContainerStyle"
+			<input
+				v-model="queryInput"
+				type="text"
+				placeholder="What would you like to do..."
 			>
-				<textarea
-					v-model="chatMessages"
-					readonly
-				/>
-				<!-- Chat messages will appear here -->
-			</div>
-			<div id="chat-input-container">
-				<textarea
-					v-model="chatInput"
-					placeholder="Type a message..."
-				/>
-				<button @click="handleChatInput">
-					Send
-				</button>
-			</div>
+			<BaseButton
+				class="direction-button"
+				@click="handleChatInput"
+			>
+				<Icon icon="arrow-right" />
+			</BaseButton>
 		</div>
 	</div>
 	<div
@@ -45,25 +37,40 @@
 		class="instruction-container"
 	>
 		<BaseButton
+			v-if="instructionStep > 0"
 			class="direction-button"
 			@click="showPrevInstruction"
 		>
-			<Icon icon="x" />
+			<Icon icon="angle-left" />
 		</BaseButton>
 		<p>
 			{{ currentInstruction }}
 		</p>
 		<BaseButton
 			class="direction-button"
+			@click="clickRedBoxedElements"
+		>
+			<Icon icon="wand-magic" />
+		</BaseButton>
+		<BaseButton
+			v-if="!isLastInstructionStep"
+			class="direction-button"
 			@click="showNextInstruction"
 		>
-			<Icon icon="x" />
+			<Icon icon="angle-right" />
+		</BaseButton>
+		<BaseButton
+			v-if="isLastInstructionStep"
+			class="direction-button"
+			@click="showNextInstruction"
+		>
+			<Icon icon="check" />
 		</BaseButton>
 	</div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 
@@ -82,7 +89,7 @@ watch(route, (newRoute) => {
     const pageUrl = currentRouteUrl.value
 
 	console.log(extractedText)
-	console.log("Page URL")
+	console.log('Page URL')
 	console.log(pageUrl)
 
     // Save the extracted text and URL of the current page
@@ -90,14 +97,14 @@ watch(route, (newRoute) => {
 
     // Update the current route URL to the new route
     currentRouteUrl.value = newRoute.fullPath
-	console.log("New Route URL")
+	console.log('New Route URL')
 	console.log(currentRouteUrl.value)
 })
 
 function savePageData(url: string, extractedText: string) {
 	const storageKey = 'pageData'
     const storedData = localStorage.getItem(storageKey)
-    let pageData = storedData ? JSON.parse(storedData) : {}
+    const pageData = storedData ? JSON.parse(storedData) : {}
 
     // Update or add the cleaned HTML for the current URL
     pageData[url] = extractedText
@@ -108,41 +115,35 @@ function savePageData(url: string, extractedText: string) {
 
 }
 
+const queryInput = ref('')
 
-const isChatOpen = ref(false)
-const isExpanded = ref(false)
-const chatInput = ref('')
-const chatMessages = ref('')
-
+const isInputOpen = ref(false)
 const showInstruction = ref(false)
 const currentInstruction = ref('')
 const instructionStep = ref(0)
+
+const isLoadingInstructions = ref(false)
+const isLastInstructionStep = computed(() => instructionStep.value == instructionSet.length - 1)
+
 let instructionSet: []
 
-const chatContainerStyle = computed(() => ({
-	width: isExpanded.value ? '500px' : '300px',
-	height: isExpanded.value ? '500px' : 'auto',
-}))
-
-const messageContainerStyle = computed(() => ({
-	flex: '1',
-	overflowY: 'auto',
-}))
-
-const toggleChat = () => {
-	isChatOpen.value = !isChatOpen.value
+const toggleInput = () => {
+	isInputOpen.value = !isInputOpen.value
 }
 
 const handleChatInput = async () => {
-	const userMessage = chatInput.value
-	chatMessages.value += `\nUser: ${userMessage}`
-	chatInput.value = ''
+	toggleInput()
+	isLoadingInstructions.value = true
+
+	const userMessage = queryInput.value
+	console.log(`Query from user: ${userMessage}`)
+	queryInput.value = ''
 
 	const element = document.documentElement 
 	const cleanedHtml = cleanHtmlText(element)
 	console.log(cleanedHtml)
 
-	    // Retrieve stored page data
+	// Retrieve stored page data
 	const storageKey = 'pageData'
     const storedData = localStorage.getItem(storageKey)
     const pageData = storedData ? JSON.parse(storedData) : {}
@@ -157,7 +158,6 @@ const handleChatInput = async () => {
 	}
 	otherPagesText += other_pages_prompt
 	console.log(otherPagesText)
-
 
 	try {
 		const response = await axios.post('https://api.openai.com/v1/responses', {
@@ -200,8 +200,9 @@ const handleChatInput = async () => {
 			},
 		})
 
+		isLoadingInstructions.value = false
 		const aiResponse = response.data.output[0].content[0].text
-		chatMessages.value += `\nAI: ${aiResponse}`
+		console.log(`Response from OpenAI: ${aiResponse}`)
 
 		const startIndex = aiResponse.indexOf('[')
 		const endIndex = aiResponse.lastIndexOf(']')
@@ -311,7 +312,7 @@ function highlightElement(cleanedResponse: string) {
 					}
 				}
 			} catch (error) {
-				console.error(`Invalid selector: ${sel}`, error);
+				console.error(`Invalid selector: ${sel}`, error)
 			}
 		})
 		if (matchingElements.length > 1) {
@@ -338,93 +339,13 @@ const clickRedBoxedElements = () => {
 </script>
 
 <style lang="scss" scoped>
-#chat-container {
-	position: fixed;
-	bottom: 10px;
-	right: 10px;
-	background: white;
-	border: 1px solid #ccc;
-	border-radius: 5px;
-	z-index: 4999;
-	transition: width 0.3s ease, height 0.3s ease;
-	display: flex;
-	flex-direction: column;
-}
-
-#chat-header {
-	background: #007bff;
-	color: white;
-	padding: 10px;
-	cursor: pointer;
-	text-align: center;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	position: relative;
-}
-
-#chat-content {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	padding: 10px;
-}
-
-#chat-messages {
-	flex: 1;
-	width: 100%;
-	overflow-y: auto;
-	display: flex;
-	flex-direction: column;
-}
-
-#chat-messages textarea{
-	min-height: 400px;
-	resize: none;
-}
-
-#chat-input-container {
-	display: flex;
-	gap: 5px;
-	align-items: center;
-}
-
-#chat-input-container textarea {
-	flex: 1;
-	height: 50px;
-	resize: none;
-	border: 1px solid #ccc;
-	padding: 5px;
-	background: #f9f9f9;
-}
-
 .red-box {
-	border: 3px solid red !important;
+	border: 3px solid #ff7d00 !important;
 	/* Ensure the border is applied */
 	padding: 5px !important;
 	/* Ensure padding is applied */
 	z-index: 1000 !important;
 	/* Ensure it appears above other elements */
-}
-
-#chat-input-container button {
-	width: 80px;
-	background-color: #007bff;
-	color: white;
-	border: none;
-	padding: 10px;
-	cursor: pointer;
-	border-radius: 5px;
-}
-
-#wand-button {
-	position: absolute;
-	right: 10px;
-	top: 10px;
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	font-size: 20px;
 }
 
 .instruction-container {
@@ -449,9 +370,12 @@ const clickRedBoxedElements = () => {
 	color: var(--grey-200);
 }
 
-// .add-icon {
-// 	color: var(--primary-light);
-// }
+.query-container input[type=text] {
+  background: var(--grey-900);
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 2px solid var(--grey-200);
+}
 
 .direction-button {
 	padding: .25rem .5rem;
