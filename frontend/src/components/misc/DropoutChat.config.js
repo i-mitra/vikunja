@@ -11,7 +11,6 @@ Following is an example of the JSON formatted data that is expected to return wh
     },
     tag: "a",
     textContent: "Lorem Ipsum",
-    multi_page: "no"
   },
  {
     instruction: "Please click here.",
@@ -21,9 +20,9 @@ Following is an example of the JSON formatted data that is expected to return wh
     },
     tag: "a",
     textContent: "Lorem Ipsum",
-    multi_page: "no"
   }
 ]
+  Don't return any other text or instructions, only the JSON list. Make sure all elements are in double quotes! Also, make sure that you return the textContent field if it is present on the element. 
 `
 
 
@@ -31,7 +30,8 @@ export const other_pages_prompt = `Please use the information from the other pag
 
 // export const additional_other_pages_prompt = `If the answer lies on another page based on the saved text from other pages, please ONLY return a list containing only 1 json instruction with the FIRST PAGE CHANGE only, not directly going to the target page, but only the first PAGE CHANGE to navigate to the target page (no information about the target button, link, etc., only about the next button), with "multi_page": "true" in quotes if there are more steps required to complete the action.`
 // export const additional_other_pages_prompt = `If the answer lies on another page, please ensure that multi_page is set to be true, then return all the steps to navigate to the target page.`
-export const additional_other_pages_prompt = `If the answer lies on another page, remember that you can only use the HTML elements from the CURRENT PAGE to navigate to the target page. If the answer lies on another page, ensure that multi_page is set to be "yes", then return all the steps to navigate to the target page. Ensure that all steps include the exact names of the relevantHTML elements correctly.`
+// export const additional_other_pages_prompt = `If the answer lies on another page, remember that you can only use the HTML elements from the CURRENT PAGE, one at a time, to navigate to the target page. Ensure that all steps include the exact names of the relevant HTML elements correctly. If the answer lies in a subpage within settings, for example, make sure to navigate to the settings page first, then to the subpage.`
+export const additional_other_pages_prompt = `If the answer lies on another page, return the steps one at a time to navigate to the target page. Make an educated guess about the textContent fields of the relevant elements on the target page.`
 
 
 export const saved_pages_prompt = `Here is an overview of what lies on other pages:

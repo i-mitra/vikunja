@@ -106,6 +106,13 @@ watch(route, (newRoute) => {
     currentRouteUrl.value = newRoute.fullPath
 	console.log('New Route URL')
 	console.log(currentRouteUrl.value)
+
+
+	// if (showInstruction.value && instructionStep.value < instructionSet.length - 1) {
+	// 	queryInput.value = previousQueryInput.value
+    //     instructionStep.value = -1 // Disrupt the current step
+    //     handleChatInput() // Re-ask the same query
+    // }
 })
 
 // Object to accumulate data
@@ -154,12 +161,12 @@ function downloadAccumulatedData() {
 }
 
 const queryInput = ref('')
+const previousQueryInput = ref('')
 
 const isInputOpen = ref(false)
 const showInstruction = ref(false)
 const currentInstruction = ref('')
 const instructionStep = ref(0)
-const multiPageInstruction = ref(false)
 
 const isLoadingInstructions = ref(false)
 const isLastInstructionStep = computed(() => instructionStep.value == instructionSet.length - 1)
@@ -177,30 +184,15 @@ const handleChatInput = async () => {
 	const userMessage = queryInput.value
 	console.log(`Query from user: ${userMessage}`)
 	queryInput.value = ''
+	previousQueryInput.value = userMessage
 
 	const element = document.documentElement 
 	const cleanedHtml = cleanHtmlText(element)
 	console.log(cleanedHtml)
 
-	// // Retrieve stored page data
-	// const storageKey = 'pageData'
-    // const storedData = localStorage.getItem(storageKey)
-    // const pageData = storedData ? JSON.parse(storedData) : {}
-
-    // // Extract text content from all stored pages
-    // let otherPagesText = 'Here is what the other pages look like:\n'
-    // for (const [url, pageText] of Object.entries(pageData)) {
-    //     otherPagesText += `URL: ${url}\n${pageText}\n${url}\n---\n`
-    // }
-	// if (otherPagesText.length > 10000) {
-	// 	otherPagesText = otherPagesText.substring(0, 10000)
-	// }
-	// otherPagesText += other_pages_prompt
-	// console.log(otherPagesText)
-
 	try {
 		const response = await axios.post('https://api.openai.com/v1/responses', {
-			model: 'gpt-4o-mini',
+			model: 'gpt-4o',
 			input: [
 				{
 					role: 'system',
@@ -251,7 +243,6 @@ const handleChatInput = async () => {
 		instructionSet = JSON.parse(jsonResponse)
 		instructionStep.value = -1
 		showNextInstruction()
-		multiPageInstruction.value = false
 		showInstruction.value = true
 
 	} catch (error) {
@@ -264,12 +255,6 @@ function showPrevInstruction() {
 }
 function showNextInstruction() {
 	showInstructionIn(1)
-
-	// Check if it's a multipage instruction and the next step is the last one
-	if (multiPageInstruction.value && isLastInstructionStep.value) {
-		// Re-trigger the handleChatInput with the original query
-		handleChatInput()
-	}
 }
 
 function showInstructionIn(direction:number) {
@@ -302,12 +287,8 @@ function highlightElement(cleanedResponse: string) {
 		// Parse the cleaned response
 		const parsedResponse = JSON.parse(cleanedResponse)
 		// Extract the necessary information
-		const { instruction, attributes, tag, textContent, multi_page } = parsedResponse
-		console.log(instruction, attributes, tag, textContent, multi_page)
-
-		if (multi_page == "yes") {
-			multiPageInstruction.value = true
-		}
+		const { instruction, attributes, tag, textContent } = parsedResponse
+		console.log(instruction, attributes, tag, textContent)
 
 		currentInstruction.value = instruction
 
@@ -342,8 +323,20 @@ function highlightElement(cleanedResponse: string) {
 			return element.textContent?.trim() === textContent
 		})
 
+		if (matchingElements.length === 0) {
+			// If no elements match the exact text content, try partial matching
+			const textContentWords = textContent.trim().split(/\s+/)
+			matchingElements = Array.from(document.querySelectorAll('*')).filter(element => {
+				const elementText = element.textContent?.trim() || ''
+				return textContentWords.some(word => elementText.includes(word))
+			})
+			if (matchingElements.length > 1) {
+				matchingElements = []
+			}
+		}
+
 		// If no elements match the text content, select all elements with the tag
-		if (matchingElements.length === 0 || !textContent.trim())  {
+		if (!textContent.trim())  {
 			matchingElements = Array.from(document.querySelectorAll(tag))
 		}
 
