@@ -67,6 +67,13 @@
 			<Icon icon="check" />
 		</BaseButton>
 	</div>
+	<BaseButton
+		v-if="false"
+		class="download-button"
+		@click="downloadAccumulatedData"
+	>
+		Download Data
+	</BaseButton>
 </template>
 
 <script lang="ts" setup>
@@ -77,7 +84,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import axios from 'axios'
 import { cleanHtmlText, extractTextContent } from '../../../../htmlCleaner/text_cleaner.js'
 import { OPENAI_API_KEY } from '../../open-ai.config.js'
-import { system_prompt, other_pages_prompt, additional_other_pages_prompt } from './DropoutChat.config.js'
+import { system_prompt, other_pages_prompt, saved_pages_prompt, additional_other_pages_prompt } from './DropoutChat.config.js'
 
 const route = useRoute()
 
@@ -101,18 +108,49 @@ watch(route, (newRoute) => {
 	console.log(currentRouteUrl.value)
 })
 
+// Object to accumulate data
+const accumulatedData = ref<Record<string, string>>({})
+
+// Function to save page data
 function savePageData(url: string, extractedText: string) {
 	const storageKey = 'pageData'
-    const storedData = localStorage.getItem(storageKey)
-    const pageData = storedData ? JSON.parse(storedData) : {}
+	const storedData = localStorage.getItem(storageKey)
+	const pageData = storedData ? JSON.parse(storedData) : {}
 
-    // Update or add the cleaned HTML for the current URL
-    pageData[url] = extractedText
+	// Update or add the cleaned HTML for the current URL
+	pageData[url] = extractedText
 
-    // Save the updated data back to local storage
-    localStorage.setItem(storageKey, JSON.stringify(pageData))
-	console.log(`Data saved for URL: ${url}`)
+	// Save the updated data back to local storage
+	localStorage.setItem(storageKey, JSON.stringify(pageData))
+	// console.log(`Data saved for URL: ${url}`)
 
+	// Append data to the accumulatedData object
+	accumulatedData.value[url] = extractedText
+}
+
+// Function to download the accumulated data
+function downloadAccumulatedData() {
+	let dataToSave = ''
+	for (const [url, text] of Object.entries(accumulatedData.value)) {
+		dataToSave += `URL: ${url}\n${text}\n---\n`
+	}
+
+	// Create a Blob from the data
+	const blob = new Blob([dataToSave], { type: 'text/plain' })
+
+	// Create a link element
+	const link = document.createElement('a')
+	link.href = URL.createObjectURL(blob)
+	link.download = 'dropoutsavedpages.txt'
+
+	// Append the link to the body
+	document.body.appendChild(link)
+
+	// Programmatically click the link to trigger the download
+	link.click()
+
+	// Clean up by removing the link
+	document.body.removeChild(link)
 }
 
 const queryInput = ref('')
@@ -121,6 +159,7 @@ const isInputOpen = ref(false)
 const showInstruction = ref(false)
 const currentInstruction = ref('')
 const instructionStep = ref(0)
+const multiPageInstruction = ref(false)
 
 const isLoadingInstructions = ref(false)
 const isLastInstructionStep = computed(() => instructionStep.value == instructionSet.length - 1)
@@ -143,21 +182,21 @@ const handleChatInput = async () => {
 	const cleanedHtml = cleanHtmlText(element)
 	console.log(cleanedHtml)
 
-	// Retrieve stored page data
-	const storageKey = 'pageData'
-    const storedData = localStorage.getItem(storageKey)
-    const pageData = storedData ? JSON.parse(storedData) : {}
+	// // Retrieve stored page data
+	// const storageKey = 'pageData'
+    // const storedData = localStorage.getItem(storageKey)
+    // const pageData = storedData ? JSON.parse(storedData) : {}
 
-    // Extract text content from all stored pages
-    let otherPagesText = 'Here is what the other pages look like:\n'
-    for (const [url, pageText] of Object.entries(pageData)) {
-        otherPagesText += `URL: ${url}\n${pageText}\n${url}\n---\n`
-    }
-	if (otherPagesText.length > 10000) {
-		otherPagesText = otherPagesText.substring(0, 10000)
-	}
-	otherPagesText += other_pages_prompt
-	console.log(otherPagesText)
+    // // Extract text content from all stored pages
+    // let otherPagesText = 'Here is what the other pages look like:\n'
+    // for (const [url, pageText] of Object.entries(pageData)) {
+    //     otherPagesText += `URL: ${url}\n${pageText}\n${url}\n---\n`
+    // }
+	// if (otherPagesText.length > 10000) {
+	// 	otherPagesText = otherPagesText.substring(0, 10000)
+	// }
+	// otherPagesText += other_pages_prompt
+	// console.log(otherPagesText)
 
 	try {
 		const response = await axios.post('https://api.openai.com/v1/responses', {
@@ -177,7 +216,7 @@ const handleChatInput = async () => {
 					content: [
 						{
 							type: 'input_text',
-							text: `${otherPagesText}\n${cleanedHtml}\n${userMessage}\n\n${additional_other_pages_prompt}`,
+							text: `${saved_pages_prompt}\n${cleanedHtml}\n${userMessage}\n\n${additional_other_pages_prompt}`,
 						},
 					],
 				},
@@ -212,6 +251,7 @@ const handleChatInput = async () => {
 		instructionSet = JSON.parse(jsonResponse)
 		instructionStep.value = -1
 		showNextInstruction()
+		multiPageInstruction.value = false
 		showInstruction.value = true
 
 	} catch (error) {
@@ -224,6 +264,12 @@ function showPrevInstruction() {
 }
 function showNextInstruction() {
 	showInstructionIn(1)
+
+	// Check if it's a multipage instruction and the next step is the last one
+	if (multiPageInstruction.value && isLastInstructionStep.value) {
+		// Re-trigger the handleChatInput with the original query
+		handleChatInput()
+	}
 }
 
 function showInstructionIn(direction:number) {
@@ -256,9 +302,13 @@ function highlightElement(cleanedResponse: string) {
 		// Parse the cleaned response
 		const parsedResponse = JSON.parse(cleanedResponse)
 		// Extract the necessary information
-		const { instruction, attributes, tag, textContent } = parsedResponse
-		console.log(instruction, attributes, tag, textContent)
-		
+		const { instruction, attributes, tag, textContent, multi_page } = parsedResponse
+		console.log(instruction, attributes, tag, textContent, multi_page)
+
+		if (multi_page == "yes") {
+			multiPageInstruction.value = true
+		}
+
 		currentInstruction.value = instruction
 
 		let attributeSelectors = ''
@@ -380,5 +430,16 @@ const clickRedBoxedElements = () => {
 .direction-button {
 	padding: .25rem .5rem;
 	cursor: pointer;
+}
+
+.download-button {
+	padding: .5rem 1rem;
+	cursor: pointer;
+	background-color: var(--primary-color);
+	color: white;
+	border-radius: $radius;
+	margin-top: 1rem;
+	z-index: 6000;
+	position: relative;
 }
 </style>
