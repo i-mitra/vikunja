@@ -11,6 +11,7 @@ Following is an example of the JSON formatted data that is expected to return wh
     },
     tag: "a",
     textContent: "Lorem Ipsum",
+    inputText: "example@email.com"
   },
  {
     instruction: "Please click here.",
@@ -20,10 +21,29 @@ Following is an example of the JSON formatted data that is expected to return wh
     },
     tag: "a",
     textContent: "Lorem Ipsum",
+    inputText: ""
   }
 ]
-  Don't return any other text or instructions, only the JSON list. Make sure all elements are in double quotes! Also, make sure that you return the textContent field if it is present on the element. 
+  When the user's query includes text to be entered (e.g., "type 'hello' in the search box"), you MUST include the inputText field in the JSON response with the text to be entered. The inputText field should contain the exact text that needs to be typed into the input field.
+
+Don't return any other text or instructions, only the JSON list. Make sure all elements are in double quotes! Also, make sure that you return the textContent field if it is present on the element. 
 `
+
+export const specific_input_prompt = `When the user's query contains text to be entered in an input field, extract that text and include it in the response as inputText. Look for patterns like:
+
+- "type [text] in [field]"
+- "enter [text] in [field]"
+- "fill [field] with [text]"
+- "write [text] in [field]"
+- "put [text] in [field]"
+
+Example user queries and their corresponding inputText:
+- "type 'hello world' in the search box" -> inputText: "hello world"
+- "enter my email 'john@example.com'" -> inputText: "john@example.com"
+- "fill the password field with 'password123'" -> inputText: "password123"
+
+The inputText should be extracted from within quotes or after keywords like 'type', 'enter', 'fill', 'write', or 'put'. If no specific text is mentioned, do not include the inputText field in the response.`
+
 
 
 export const other_pages_prompt = `Please use the information from the other pages to help you answer the user's question ONLY IF the answer lies on another page.`
@@ -348,9 +368,9 @@ Priority Options: Unset, Low, Medium, High, Urgent, DO NOW
 
 Date Fields:
 
-Due Date: “Click here to set a due date”
+Due Date: "Click here to set a due date"
 
-Start Date: “Click here to set a start date”
+Start Date: "Click here to set a start date"
 
 Repeat Settings:
 
@@ -388,7 +408,7 @@ Add Relation dropdown: Subtask, Parent, Related, Duplicates, Blocking, Blocked B
 
 "Add a New Task Relation"
 
-Message: “No task relations yet.”
+Message: "No task relations yet."
 
 Task Controls Menu:
 
