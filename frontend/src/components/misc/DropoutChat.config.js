@@ -24,38 +24,24 @@ Following is an example of the JSON formatted data that is expected to return wh
   }
 ]
 
-IMPORTANT: When the user's query includes text to be entered (e.g., "enter 'hello' in the search box"), you MUST include the textInput field in the JSON response with the text to be entered. The textInput field should contain the exact text that needs to be typed into the input field. Look for patterns like:
-- "type [text] in [field]"
+IMPORTANT: When the user's query includes text to be entered, you MUST include the textInput field in the JSON response with the text to be entered. The textInput field should contain the exact text that needs to be typed into the input field. Look for patterns like:
+- "add [text] in [field]"
 - "enter [text] in [field]"
 - "fill [field] with [text]"
 - "write [text] in [field]"
 - "put [text] in [field]"
 
-For example, if the user says "add 'cook' in the tasks", the response should look like:
+For example, if the user says "add a do laundry task", the response should look like:
 [
   {
-    instruction: "Please type 'cook' here.",
+    instruction: "Please type "do laundry" here.",
     attributes: {
         class: "add-task-textarea",
         type: "textarea",
     },
     tag: "textarea",
     textContent: "",
-    textInput: "cook"
-  }
-]
-
-Following is another example of the JSON formatted data that is expected to return when the user's query contains text to be entered:
-[
-  {
-    instruction: "Please type in the search box.",
-    attributes: {
-        class: "search-input",
-        type: "text",
-    },
-    tag: "input",
-    textContent: "Search...",
-    textInput: "hello world"
+    textInput: "do laundry"
   }
 ]
 
