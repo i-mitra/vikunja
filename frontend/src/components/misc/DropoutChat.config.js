@@ -11,7 +11,7 @@ Following is an example of the JSON formatted data that is expected to return wh
     },
     tag: "a",
     textContent: "Lorem Ipsum",
-    inputText: "example@email.com"
+    textInput: "example@email.com"
   },
  {
     instruction: "Please click here.",
@@ -20,31 +20,46 @@ Following is an example of the JSON formatted data that is expected to return wh
         type: "button",
     },
     tag: "a",
-    textContent: "Lorem Ipsum",
-    inputText: ""
+    textContent: "Lorem Ipsum"
   }
 ]
-  When the user's query includes text to be entered (e.g., "type 'hello' in the search box"), you MUST include the inputText field in the JSON response with the text to be entered. The inputText field should contain the exact text that needs to be typed into the input field.
 
-Don't return any other text or instructions, only the JSON list. Make sure all elements are in double quotes! Also, make sure that you return the textContent field if it is present on the element. 
-`
-
-export const specific_input_prompt = `When the user's query contains text to be entered in an input field, extract that text and include it in the response as inputText. Look for patterns like:
-
+IMPORTANT: When the user's query includes text to be entered (e.g., "enter 'hello' in the search box"), you MUST include the textInput field in the JSON response with the text to be entered. The textInput field should contain the exact text that needs to be typed into the input field. Look for patterns like:
 - "type [text] in [field]"
 - "enter [text] in [field]"
 - "fill [field] with [text]"
 - "write [text] in [field]"
 - "put [text] in [field]"
 
-Example user queries and their corresponding inputText:
-- "type 'hello world' in the search box" -> inputText: "hello world"
-- "enter my email 'john@example.com'" -> inputText: "john@example.com"
-- "fill the password field with 'password123'" -> inputText: "password123"
+For example, if the user says "add 'cook' in the tasks", the response should look like:
+[
+  {
+    instruction: "Please type 'cook' here.",
+    attributes: {
+        class: "add-task-textarea",
+        type: "textarea",
+    },
+    tag: "textarea",
+    textContent: "",
+    textInput: "cook"
+  }
+]
 
-The inputText should be extracted from within quotes or after keywords like 'type', 'enter', 'fill', 'write', or 'put'. If no specific text is mentioned, do not include the inputText field in the response.`
+Following is another example of the JSON formatted data that is expected to return when the user's query contains text to be entered:
+[
+  {
+    instruction: "Please type in the search box.",
+    attributes: {
+        class: "search-input",
+        type: "text",
+    },
+    tag: "input",
+    textContent: "Search...",
+    textInput: "hello world"
+  }
+]
 
-
+Remember: If the user's query includes text to be entered, you MUST include the textInput field with the exact text to be entered. This is crucial for the magic wand functionality to work correctly.`
 
 export const other_pages_prompt = `Please use the information from the other pages to help you answer the user's question ONLY IF the answer lies on another page.`
 

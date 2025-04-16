@@ -287,8 +287,8 @@ function highlightElement(cleanedResponse: string) {
 		// Parse the cleaned response
 		const parsedResponse = JSON.parse(cleanedResponse)
 		// Extract the necessary information
-		const { instruction, attributes, tag, textContent } = parsedResponse
-		console.log(instruction, attributes, tag, textContent)
+		const { instruction, attributes, tag, textContent, textInput } = parsedResponse
+		console.log(instruction, attributes, tag, textContent, textInput)
 
 		currentInstruction.value = instruction
 
@@ -365,6 +365,10 @@ function highlightElement(cleanedResponse: string) {
 		// Highlight the matching elements, can be 0 or 1
 		matchingElements.forEach(element => {
 			element.classList.add('red-box')
+			// Store the textInput value as a data attribute if it exists
+			if (textInput) {
+				element.setAttribute('data-text-input', textInput)
+			}
 			console.log(`Element with text "${textContent}" highlighted.`)
 		})
 
@@ -375,8 +379,78 @@ function highlightElement(cleanedResponse: string) {
 
 const clickRedBoxedElements = () => {
 	const redBoxedElements = document.querySelectorAll('.red-box')
-	redBoxedElements.forEach(element => {
-		(element as HTMLElement).click()
+	console.log('Found red-boxed elements:', redBoxedElements.length)
+	
+	redBoxedElements.forEach((element) => {
+		// Get the current instruction from the instruction set
+		const currentStep = instructionSet[instructionStep.value]
+		console.log('Current step:', currentStep)
+		console.log('Instruction set:', instructionSet)
+		console.log('Current step index:', instructionStep.value)
+		
+		// Check if the current step has textInput
+		if (currentStep && 'textInput' in currentStep && currentStep.textInput) {
+			console.log('Found textInput:', currentStep.textInput)
+			
+			// If the element itself is an input or textarea
+			if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+				console.log('Direct input/textarea found')
+				element.value = currentStep.textInput
+				// Create and dispatch input event
+				const inputEvent = new Event('input', { bubbles: true, cancelable: true })
+				element.dispatchEvent(inputEvent)
+				// Create and dispatch change event
+				const changeEvent = new Event('change', { bubbles: true, cancelable: true })
+				element.dispatchEvent(changeEvent)
+				// Force focus and blur to trigger any bound events
+				element.focus()
+				element.blur()
+			} else {
+				// Look for a form under the red-box element
+				const form = element.querySelector('form')
+				console.log('Form found:', form)
+				
+				if (form) {
+					// Find the first input or textarea in the form
+					const input = form.querySelector('input, textarea')
+					if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+						console.log('Setting value for input:', input)
+						input.value = currentStep.textInput
+						// Create and dispatch input event
+						const inputEvent = new Event('input', { bubbles: true, cancelable: true })
+						input.dispatchEvent(inputEvent)
+						// Create and dispatch change event
+						const changeEvent = new Event('change', { bubbles: true, cancelable: true })
+						input.dispatchEvent(changeEvent)
+						// Force focus and blur to trigger any bound events
+						input.focus()
+						input.blur()
+					}
+				} else {
+					// If no form found, look for the first input/textarea in the element's children
+					const input = element.querySelector('input, textarea')
+					if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+						console.log('Setting value for input:', input)
+						input.value = currentStep.textInput
+						// Create and dispatch input event
+						const inputEvent = new Event('input', { bubbles: true, cancelable: true })
+						input.dispatchEvent(inputEvent)
+						// Create and dispatch change event
+						const changeEvent = new Event('change', { bubbles: true, cancelable: true })
+						input.dispatchEvent(changeEvent)
+						// Force focus and blur to trigger any bound events
+						input.focus()
+						input.blur()
+					}
+				}
+			}
+		} else {
+			// If no textInput, just click the element
+			console.log('No textInput found, clicking element')
+			if (element instanceof HTMLElement) {
+				element.click()
+			}
+		}
 	})
 }
 </script>
