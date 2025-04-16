@@ -11,6 +11,7 @@ Following is an example of the JSON formatted data that is expected to return wh
     },
     tag: "a",
     textContent: "Lorem Ipsum",
+    textInput: "example@email.com"
   },
  {
     instruction: "Please click here.",
@@ -19,12 +20,32 @@ Following is an example of the JSON formatted data that is expected to return wh
         type: "button",
     },
     tag: "a",
-    textContent: "Lorem Ipsum",
+    textContent: "Lorem Ipsum"
   }
 ]
-  Don't return any other text or instructions, only the JSON list. Make sure all elements are in double quotes! Also, make sure that you return the textContent field if it is present on the element. 
-`
 
+IMPORTANT: When the user's query includes text to be entered, you MUST include the textInput field in the JSON response with the text to be entered. The textInput field should contain the exact text that needs to be typed into the input field. Look for patterns like:
+- "add [text] in [field]"
+- "enter [text] in [field]"
+- "fill [field] with [text]"
+- "write [text] in [field]"
+- "put [text] in [field]"
+
+For example, if the user says "add a do laundry task", the response should look like:
+[
+  {
+    instruction: "Please type "do laundry" here.",
+    attributes: {
+        class: "add-task-textarea",
+        type: "textarea",
+    },
+    tag: "textarea",
+    textContent: "",
+    textInput: "do laundry"
+  }
+]
+
+Remember: If the user's query includes text to be entered, you MUST include the textInput field with the exact text to be entered. This is crucial for the magic wand functionality to work correctly.`
 
 export const other_pages_prompt = `Please use the information from the other pages to help you answer the user's question ONLY IF the answer lies on another page.`
 
@@ -348,9 +369,9 @@ Priority Options: Unset, Low, Medium, High, Urgent, DO NOW
 
 Date Fields:
 
-Due Date: “Click here to set a due date”
+Due Date: "Click here to set a due date"
 
-Start Date: “Click here to set a start date”
+Start Date: "Click here to set a start date"
 
 Repeat Settings:
 
@@ -388,7 +409,7 @@ Add Relation dropdown: Subtask, Parent, Related, Duplicates, Blocking, Blocked B
 
 "Add a New Task Relation"
 
-Message: “No task relations yet.”
+Message: "No task relations yet."
 
 Task Controls Menu:
 
