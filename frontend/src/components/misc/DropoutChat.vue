@@ -18,7 +18,7 @@
 				icon="hourglass-half"
 			/>
 			<div
-				v-if="isInputOpen"
+				v-if="!showInstruction && !isLoadingInstructions"
 				class="query-container"
 			>
 				<input
@@ -210,7 +210,6 @@ function downloadAccumulatedData() {
 const queryInput = ref('')
 const previousQueryInput = ref('')
 
-const isInputOpen = ref(true)
 const showInstruction = ref(false)
 const currentInstruction = ref('')
 const instructionStep = ref(0)
@@ -220,13 +219,8 @@ const isLastInstructionStep = computed(() => instructionStep.value == instructio
 
 let instructionSet: []
 
-const toggleInput = () => {
-	isInputOpen.value = !isInputOpen.value
-}
-
 const handleChatInput = async () => {
 	if (queryInput.value !== '') {
-		toggleInput()
 		await askOpenAI(queryInput.value)
 		queryInput.value = ''
 	}
@@ -435,7 +429,6 @@ const clickRedBoxedElements = () => {
 	if (showDemo.value) {
 		baseStore.setDropoutChatShowDemo(false)
 		showInstruction.value = false
-		isInputOpen.value = false
 		askOpenAI('Using "Quick Add Magic", when creating a task, you can use special keywords to directly add attributes to the newly created task. This allows to add commonly used attributes to tasks much faster. To add a label, simply prefix the name of the label with *. Vikunja will first check if the label already exist and create it if not. You can use this multiple times. To use spaces, simply add a " or \' around the label name. For example: *"Label with spaces". ' + 'In two steps, show me how to add task with label. Don\'t show me where to add task, explian the syntax for adding a label with the task and then just show where to click to add the new task.')
 	} else {
 		const redBoxedElements = document.querySelectorAll('.red-box')
