@@ -1,71 +1,81 @@
 <template>
 	<div
-		v-if="!showInstruction"
-		class="instruction-container"
+		v-if="active"
 	>
-		<BaseButton
-			v-if="!isLoadingInstructions"
-			class="direction-button"
-			@click="toggleInput"
-		>
-			<Icon icon="graduation-cap" />
-		</BaseButton>
-		<Icon
-			v-if="isLoadingInstructions"
-			class="direction-button"
-			icon="hourglass-half"
-		/>
 		<div
-			v-if="isInputOpen"
-			class="query-container"
+			v-if="!showInstruction"
+			class="instruction-container"
 		>
-			<input
-				v-model="queryInput"
-				type="text"
-				placeholder="What would you like to do..."
+			<BaseButton
+				v-if="!isLoadingInstructions"
+				class="direction-button"
 			>
+				<Petasos class="icon" />
+			</BaseButton>
+			<Icon
+				v-if="isLoadingInstructions"
+				class="direction-button"
+				icon="hourglass-half"
+			/>
+			<div
+				v-if="isInputOpen"
+				class="query-container"
+			>
+				<input
+					v-model="queryInput"
+					type="text"
+					placeholder="What would you like to do..."
+				>
+				<BaseButton
+					class="direction-button"
+					@click="handleChatInput"
+				>
+					<Icon icon="arrow-right" />
+				</BaseButton>
+			</div>
+		</div>
+		<div
+			v-if="showInstruction"
+			class="instruction-container"
+		>
+			<BaseButton
+				v-if="instructionStep > 0"
+				class="direction-button"
+				@click="showPrevInstruction"
+			>
+				<Icon icon="angle-left" />
+			</BaseButton>
+			<BaseButton
+				v-if="showDemo"
+				class="direction-button"
+				@click="closeDropoutChat"
+			>
+				<Icon icon="x" />
+			</BaseButton>
+			<p>
+				{{ currentInstruction }}
+			</p>
 			<BaseButton
 				class="direction-button"
-				@click="handleChatInput"
+				@click="clickRedBoxedElements"
 			>
-				<Icon icon="arrow-right" />
+				<Talia class="icon" />
+			</BaseButton>
+			<BaseButton
+				v-if="!isLastInstructionStep"
+				class="direction-button"
+				@click="showNextInstruction"
+			>
+				<Icon icon="angle-right" />
+			</BaseButton>
+			<BaseButton
+				v-if="isLastInstructionStep && !showDemo"
+				class="direction-button"
+				@click="showNextInstruction"
+			>
+				<Icon icon="check" />
 			</BaseButton>
 		</div>
-	</div>
-	<div
-		v-if="showInstruction"
-		class="instruction-container"
-	>
-		<BaseButton
-			v-if="instructionStep > 0"
-			class="direction-button"
-			@click="showPrevInstruction"
-		>
-			<Icon icon="angle-left" />
-		</BaseButton>
-		<p>
-			{{ currentInstruction }}
-		</p>
-		<BaseButton
-			class="direction-button"
-			@click="clickRedBoxedElements"
-		>
-			<Icon icon="wand-magic" />
-		</BaseButton>
-		<BaseButton
-			v-if="!isLastInstructionStep"
-			class="direction-button"
-			@click="showNextInstruction"
-		>
-			<Icon icon="angle-right" />
-		</BaseButton>
-		<BaseButton
-			v-if="isLastInstructionStep"
-			class="direction-button"
-			@click="showNextInstruction"
-		>
-			<Icon icon="check" />
-		</BaseButton>
 	</div>
 	<BaseButton
 		v-if="false"
@@ -77,7 +87,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
+import Talia from '@/assets/Talia_DVXI.svg?component'
+import Petasos from '@/assets/Petasos_DVXI.svg?component'
+
+import { ref, computed, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 
@@ -85,10 +98,44 @@ import axios from 'axios'
 import { cleanHtmlText, extractTextContent } from '../../../../htmlCleaner/text_cleaner.js'
 import { OPENAI_API_KEY } from '../../open-ai.config.js'
 import { system_prompt, other_pages_prompt, saved_pages_prompt, additional_other_pages_prompt } from './DropoutChat.config.js'
+import { useBaseStore } from '@/stores/base.js'
 
 const route = useRoute()
 
 const currentRouteUrl = ref(route.fullPath)
+
+const baseStore = useBaseStore()
+
+const active = computed(() => baseStore.dropoutChatActive)
+
+const showDemo = computed(() => baseStore.dropoutChatShowDemo)
+
+watchEffect(() => {
+	if (!active.value) {
+		// DO NOTHING FOR NOW
+	}
+	if (showDemo.value) {
+		instructionSet = [
+			{
+				instruction: 'A new feature was added to make adding labels easier and quicker!',
+				attributes: {
+					class: 'red-box',
+					id: 'demo-instruction',
+				},
+				tag: 'div',
+				textContent: 'Click here to see the instruction.',
+			},
+		]
+		
+		instructionStep.value = 0
+		currentInstruction.value = instructionSet[0].instruction
+		showInstruction.value = true
+	}
+})
+
+function closeDropoutChat() {
+	baseStore.setDropoutChatActive(false)
+}
 
 watch(route, (newRoute) => {
     const element = document.documentElement
@@ -163,7 +210,7 @@ function downloadAccumulatedData() {
 const queryInput = ref('')
 const previousQueryInput = ref('')
 
-const isInputOpen = ref(false)
+const isInputOpen = ref(true)
 const showInstruction = ref(false)
 const currentInstruction = ref('')
 const instructionStep = ref(0)
@@ -178,15 +225,21 @@ const toggleInput = () => {
 }
 
 const handleChatInput = async () => {
-	toggleInput()
+	if (queryInput.value !== '') {
+		toggleInput()
+		await askOpenAI(queryInput.value)
+		queryInput.value = ''
+	}
+}
+
+async function askOpenAI(query: string) {
 	isLoadingInstructions.value = true
 
-	const userMessage = queryInput.value
-	console.log(`Query from user: ${userMessage}`)
-	queryInput.value = ''
-	previousQueryInput.value = userMessage
+	console.log(`Query: ${query}`)
+	
+	previousQueryInput.value = query
 
-	const element = document.documentElement 
+	const element = document.documentElement
 	const cleanedHtml = cleanHtmlText(element)
 	console.log(cleanedHtml)
 
@@ -208,7 +261,7 @@ const handleChatInput = async () => {
 					content: [
 						{
 							type: 'input_text',
-							text: `${saved_pages_prompt}\n${cleanedHtml}\n${userMessage}\n\n${additional_other_pages_prompt}`,
+							text: `${saved_pages_prompt}\n${cleanedHtml}\n${query}\n\n${additional_other_pages_prompt}`,
 						},
 					],
 				},
@@ -237,9 +290,9 @@ const handleChatInput = async () => {
 
 		const startIndex = aiResponse.indexOf('[')
 		const endIndex = aiResponse.lastIndexOf(']')
-		
+
 		const jsonResponse = aiResponse.substring(startIndex, endIndex + 1)
-		
+
 		instructionSet = JSON.parse(jsonResponse)
 		instructionStep.value = -1
 		showNextInstruction()
@@ -262,6 +315,7 @@ function showInstructionIn(direction:number) {
 
 	if (instructionSet.length == instructionStep.value+direction) {
 		showInstruction.value = false
+		baseStore.setDropoutChatActive(false)
 	} else {
 		console.log('Showing instruction...')
 		instructionStep.value+=direction
@@ -374,21 +428,23 @@ function highlightElement(cleanedResponse: string) {
 }
 
 const clickRedBoxedElements = () => {
-	const redBoxedElements = document.querySelectorAll('.red-box')
-	redBoxedElements.forEach(element => {
-		(element as HTMLElement).click()
-	})
+	if (showDemo.value) {
+		baseStore.setDropoutChatShowDemo(false)
+		showInstruction.value = false
+		isInputOpen.value = false
+		askOpenAI('Using "Quick Add Magic", when creating a task, you can use special keywords to directly add attributes to the newly created task. This allows to add commonly used attributes to tasks much faster. To add a label, simply prefix the name of the label with *. Vikunja will first check if the label already exist and create it if not. You can use this multiple times. To use spaces, simply add a " or \' around the label name. For example: *"Label with spaces". ' + 'In two steps, show me how to add task with label. Don\'t show me where to add task, explian the syntax for adding a label with the task and then just show where to click to add the new task.')
+	} else {
+		const redBoxedElements = document.querySelectorAll('.red-box')
+		redBoxedElements.forEach(element => {
+			(element as HTMLElement).click()
+		})
+	}
 }
 </script>
 
 <style lang="scss" scoped>
-.red-box {
-	border: 3px solid #ff7d00 !important;
-	/* Ensure the border is applied */
-	padding: 5px !important;
-	/* Ensure padding is applied */
-	z-index: 1000 !important;
-	/* Ensure it appears above other elements */
+.icon{
+	height: 2em; width: auto;
 }
 
 .instruction-container {
@@ -397,7 +453,7 @@ const clickRedBoxedElements = () => {
 	// at least define it centrally
 	// the highest z-index of a modal is .hint-modal with 4500
 	z-index: 5000;
-	bottom: 1rem;
+	bottom: 6rem;
 	inset-inline: 1rem;
 	max-width: max-content;
 	margin-inline: auto;
@@ -410,14 +466,16 @@ const clickRedBoxedElements = () => {
 	background: var(--grey-900);
 	border-radius: $radius;
 	font-size: .9rem;
-	color: var(--grey-200);
+	color: #c7a253;
 }
 
 .query-container input[type=text] {
   background: var(--grey-900);
   box-sizing: border-box;
   border: none;
-  border-bottom: 2px solid var(--grey-200);
+  border-bottom: 2px solid #c7a253;
+  font-size: 14px;
+  width: 300px;
 }
 
 .direction-button {

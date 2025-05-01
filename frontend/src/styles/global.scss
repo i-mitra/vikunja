@@ -92,7 +92,10 @@
 @import "custom-properties";
 
 .red-box {
-    border: 3px solid red !important;
-    padding: 5px !important;
-    z-index: 1000 !important;
-  }
+	border: 3px solid #c7a253 !important;
+	/* Ensure the border is applied */
+	padding: 5px !important;
+	/* Ensure padding is applied */
+	z-index: 1000 !important;
+	/* Ensure it appears above other elements */
+}

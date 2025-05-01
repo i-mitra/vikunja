@@ -55,6 +55,19 @@
 		</div>
 
 		<div class="navbar-end">
+			<BaseButton
+				class="trigger-button"
+				@click="toggleDropoutChat"
+			>
+				<PetasosGrey
+					v-if="!baseStore.dropoutChatShowDemo"
+					class="icon"
+				/>
+				<Petasos
+					v-if="baseStore.dropoutChatShowDemo"
+					class="icon"
+				/>
+			</BaseButton>
 			<OpenQuickActions />
 			<Notifications />
 			<Dropdown>
@@ -114,6 +127,8 @@
 </template>
 
 <script setup lang="ts">
+import Petasos from '@/assets/Petasos_DVXI.svg?component'
+import PetasosGrey from '@/assets/Petasos_DVXI_Grey.svg?component'
 import { computed } from 'vue'
 
 import { RIGHTS as Rights } from '@/constants/rights'
@@ -145,6 +160,10 @@ const authStore = useAuthStore()
 const configStore = useConfigStore()
 const imprintUrl = computed(() => configStore.legal.imprintUrl)
 const privacyPolicyUrl = computed(() => configStore.legal.privacyPolicyUrl)
+
+function toggleDropoutChat() {
+	baseStore.setDropoutChatActive(!baseStore.dropoutChatActive)
+}
 </script>
 
 <style lang="scss" scoped>

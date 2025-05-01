@@ -41,6 +41,8 @@ export const useBaseStore = defineStore('base', () => {
 	const hasTasks = ref(false)
 	const keyboardShortcutsActive = ref(false)
 	const quickActionsActive = ref(false)
+	const dropoutChatActive = ref(false)
+	const dropoutChatShowDemo = ref(false)
 	const logoVisible = ref(true)
 	const updateAvailable = ref(false)
 
@@ -84,6 +86,14 @@ export const useBaseStore = defineStore('base', () => {
 
 	function setQuickActionsActive(value: boolean) {
 		quickActionsActive.value = value
+	}
+
+	function setDropoutChatActive(isActive: boolean) {
+		dropoutChatActive.value = isActive
+	}
+
+	function setDropoutChatShowDemo(isActive: boolean) {
+		dropoutChatShowDemo.value = isActive
 	}
 
 	function setBackground(newBackground: string) {
@@ -179,6 +189,8 @@ export const useBaseStore = defineStore('base', () => {
 		hasTasks: readonly(hasTasks),
 		keyboardShortcutsActive: readonly(keyboardShortcutsActive),
 		quickActionsActive: readonly(quickActionsActive),
+		dropoutChatActive: readonly(dropoutChatActive),
+		dropoutChatShowDemo: readonly(dropoutChatShowDemo),
 		logoVisible: readonly(logoVisible),
 		updateAvailable: readonly(updateAvailable),
 
@@ -187,6 +199,8 @@ export const useBaseStore = defineStore('base', () => {
 		setHasTasks,
 		setKeyboardShortcutsActive,
 		setQuickActionsActive,
+		setDropoutChatActive,
+		setDropoutChatShowDemo,
 		setBackground,
 		setBlurHash,
 		setLogoVisible,
